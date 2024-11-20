@@ -130,7 +130,7 @@ void OLED_drawText6x8(int x, int y, const char *text)
             {
                 if (font6x8_basic[(int)text[i]][col] & (1 << row))
                 {
-                    location = (x + col + (i * 6) + OLED_vinfo.xoffset) + ((y + row + OLED_vinfo.yoffset) * OLED_vinfo.);
+                    location = (x + col + (i * 6) + OLED_vinfo.xoffset) + ((y + row + OLED_vinfo.yoffset) * OLED_vinfo.xres);
                     OLED_fbp[location*2] = 0xff; // Set pixel to white
                     OLED_fbp[location*2+1] = 0xff;
                 }
@@ -143,7 +143,7 @@ void OLED_drawText6x8(int x, int y, const char *text)
 void OLED_writeLine(int xOffset, int lineNr, const char *text)
 {
     // clear the line
-    memset(OLED_fbp + (OLED_6x8FONTHEIGHT * lineNr * OLED_vinfo.xres * vinfo.bits_per_pixel/8), 0, OLED_6x8FONTHEIGHT *  OLED_vinfo.xres * vinfo.bits_per_pixel/8);
+    memset(OLED_fbp + (OLED_6x8FONTHEIGHT * lineNr * OLED_vinfo.xres * OLED_vinfo.bits_per_pixel/8), 0, OLED_6x8FONTHEIGHT *  OLED_vinfo.xres * OLED_vinfo.bits_per_pixel/8);
     // write the line
     OLED_drawText6x8(xOffset, lineNr * OLED_6x8FONTHEIGHT, text);
 }
