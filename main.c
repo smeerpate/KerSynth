@@ -8,11 +8,13 @@ void parseMidiMessage(fluid_synth_t* synth, unsigned char* buffer)
     unsigned char data1 = buffer[1];
     unsigned char data2 = buffer[2];
 
+    unsigned char midiChannel = (status & 0x0F) + 1;
+
     switch (status & 0xF0)
     {
         case 0x80: // Note Off
             fluid_synth_noteoff(synth, status & 0x0F, data1);
-            printf("Note Off: Channel %d, Note %d\n", status & 0x0F, data1);
+            printf("Note Off: Channel %d, Note %d\n", midiChannel, data1);
             OLED_writeLine(5, 4, ":-|");
             break;
 
@@ -20,25 +22,25 @@ void parseMidiMessage(fluid_synth_t* synth, unsigned char* buffer)
             if (data2 == 0)
             {
                 fluid_synth_noteoff(synth, status & 0x0F, data1); // Note On with velocity 0 is Note Off
-                printf("Note Off: Channel %d, Note %d\n", status & 0x0F, data1);
+                printf("Note Off: Channel %d, Note %d\n", midiChannel, data1);
                 OLED_writeLine(5, 4, ":-|");
             }
             else
             {
                 fluid_synth_noteon(synth, status & 0x0F, data1, data2);
-                printf("Note On: Channel %d, Note %d, Velocity %d\n", status & 0x0F, data1, data2);
+                printf("Note On: Channel %d, Note %d, Velocity %d\n", midiChannel, data1, data2);
                 OLED_writeLine(5, 4, ":-o");
             }
             break;
 
         case 0xC0: // Program Change
             fluid_synth_program_change(synth, status & 0x0F, data1);
-            printf("Program Change: Channel %d, Program %d\n", status & 0x0F, data1);
+            printf("Program Change: Channel %d, Program %d\n", midiChannel, data1);
             break;
 
         case 0xE0: // Pitch Bend
             fluid_synth_pitch_bend(synth, status & 0x0F, (data2 << 7) | data1);
-            printf("Pitch Bend: Channel %d, Value %d\n", status & 0x0F, (data2 << 7) | data1);
+            printf("Pitch Bend: Channel %d, Value %d\n", midiChannel, (data2 << 7) | data1);
             break;
 
         default:
@@ -84,6 +86,32 @@ int main()
         return 1;
     }
 
+    // Get the SoundFont object
+    fluid_sfont_t* sfont = fluid_synth_get_sfont_by_id(synth, sfont_id);
+    if (!sfont) {
+        fprintf(stderr, "Failed to get SoundFont\n");
+        return 1;
+    }
+
+    // Iterate through presets and print their names
+    int sfIndex = 0;
+    fluid_preset_t* preset = NULL;
+    fluid_sfont_iteration_start(sfont);
+    while ((preset = fluid_sfont_iteration_next(sfont)) != NULL)
+    {
+        const char* preset_name = fluid_preset_get_name(preset);
+        printf("Preset %d: %s\n", sfIndex, preset_name);
+        sfIndex++;
+    }
+
+    // Retrieve and print the selected programs for each MIDI channel
+    for (int chan = 0; chan < 16; chan++)
+    {
+        int sfont_id, bank_num, preset_num;
+        fluid_synth_get_program(synth, chan, &sfont_id, &bank_num, &preset_num);
+        printf("Channel %d: SoundFont ID %d, Bank %d, Preset %d\n", chan+1, sfont_id, bank_num, preset_num);
+    }
+
     // Create audio driver
     fluid_audio_driver_t* adriver = new_fluid_audio_driver(settings, synth);
     if (!adriver)
@@ -108,7 +136,7 @@ int main()
         return 1;
     }
 
-    // Read and process MIDI events
+    // Application loop: Read and process MIDI events
     unsigned char buffer[3];
     int status;
     while (1)
