@@ -99,17 +99,10 @@ int main()
     fluid_sfont_iteration_start(sfont);
     while ((preset = fluid_sfont_iteration_next(sfont)) != NULL)
     {
+        int bank_num = fluid_preset_get_banknum(preset);
         const char* preset_name = fluid_preset_get_name(preset);
-        printf("Preset %d: %s\n", sfIndex, preset_name);
+        printf("Preset %d: %s (bank %d)\n", sfIndex, preset_name, bank_num);
         sfIndex++;
-    }
-
-    // Retrieve and print the selected programs for each MIDI channel
-    for (int chan = 0; chan < 16; chan++)
-    {
-        int sfont_id, bank_num, preset_num;
-        fluid_synth_get_program(synth, chan, &sfont_id, &bank_num, &preset_num);
-        printf("Channel %d: SoundFont ID %d, Bank %d, Preset %d\n", chan+1, sfont_id, bank_num, preset_num);
     }
 
     // Create audio driver
@@ -122,6 +115,24 @@ int main()
         delete_fluid_settings(settings);
         return 1;
     }
+
+    // explicitly assign presets to MIDI channels
+    //              channels      1   ,2   ,3   ,4   ,5   ,6   ,7   ,8   ,9   ,10  ,11  ,12  ,13  ,14  ,15  ,16
+    int midiChannelPresets[16] = {1   ,21  ,38  ,4   ,5   ,6   ,7   ,8   ,9   ,133-128 ,11  ,12  ,13  ,14  ,15  ,16};
+    int midiChannelBanks[16] =   {0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,128 ,0   ,0   ,0   ,0   ,0   ,0};
+    for (int chan = 0; chan < 16; chan++)
+    {
+        fluid_synth_program_select(synth, chan, sfont_id, midiChannelBanks[chan], midiChannelPresets[chan]);
+    }
+
+    // Retrieve and print the selected programs for each MIDI channel
+    for (int chan = 0; chan < 16; chan++)
+    {
+        int sfont_id, bank_num, preset_num;
+        fluid_synth_get_program(synth, chan, &sfont_id, &bank_num, &preset_num);
+        printf("Channel %d: SoundFont ID %d, Bank %d, Preset %d\n", chan+1, sfont_id, bank_num, preset_num);
+    }
+
 
     // Open MIDI input port
     snd_rawmidi_t *midiin = NULL;
@@ -136,14 +147,34 @@ int main()
         return 1;
     }
 
+    // prepare structures for checking available midi bytes for readout
+    snd_rawmidi_status_t *midi_status;
+    snd_rawmidi_status_malloc(&midi_status);
+
     // Application loop: Read and process MIDI events
-    unsigned char buffer[3];
+    unsigned char buffer[1024];
     int status;
     while (1)
     {
-        status = snd_rawmidi_read(midiin, buffer, sizeof(buffer));
-        if (status > 0)
+        // read midi status in order to be able to check the amount of bytes to read out
+        status = snd_rawmidi_status(midiin, midi_status);
+        if (status < 0) {
+            fprintf(stderr, "Error getting MIDI status: %s\n", snd_strerror(status));
+            break;
+        }
+
+        int available_bytes = snd_rawmidi_status_get_avail(midi_status);
+        if (available_bytes > 0)
         {
+            printf("Available bytes: %d\n", available_bytes);
+        }
+
+        // read midi bytes from ring buffer and parse
+        status = snd_rawmidi_read(midiin, buffer, sizeof(buffer));
+        if (status > 0) // status geeft nu het aantal gelezen bytes weer
+        {
+            for (int i = 0; i < status; i++)
+                printf("    read %02x\n",buffer[i]);
             parseMidiMessage(synth, buffer);
         }
         else if (status < 0 && status != -EAGAIN)
@@ -152,10 +183,13 @@ int main()
             OLED_drawText6x8(5, 10, "MIDI read Error");
             break;
         }
+
+        usleep(500);
     }
 
     // Clean up
     snd_rawmidi_close(midiin);
+    snd_rawmidi_status_free(midi_status);
     delete_fluid_audio_driver(adriver);
     delete_fluid_synth(synth);
     delete_fluid_settings(settings);

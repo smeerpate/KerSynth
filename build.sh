@@ -10,7 +10,7 @@ gcc -c OLED.c -o OLED.o
 gcc main.o OLED.o -o kersynth -lfluidsynth -lasound
 
 # Run the program
-./kersynth
+sudo ./kersynth
 
 # doe eerst dit chmod +x build.sh
 # voer dit uit met ./build.sh
