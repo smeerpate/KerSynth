@@ -9,6 +9,9 @@
 #include <sys/mman.h>
 #include <string.h>
 
+#define OLED_6x8FONTHEIGHT   8
+#define OLED_6x8FONTWIDTH    6
+
 static const unsigned char font6x8_basic[128][6] = {
     // Define your 6x8 font here
     // Each character is represented by 6 bytes, each byte is a row of the character
@@ -127,13 +130,22 @@ void OLED_drawText6x8(int x, int y, const char *text)
             {
                 if (font6x8_basic[(int)text[i]][col] & (1 << row))
                 {
-                    location = (x + col + (i * 6) + OLED_vinfo.xoffset) + ((y + row + OLED_vinfo.yoffset) * OLED_vinfo.xres);
+                    location = (x + col + (i * 6) + OLED_vinfo.xoffset) + ((y + row + OLED_vinfo.yoffset) * OLED_vinfo.);
                     OLED_fbp[location*2] = 0xff; // Set pixel to white
                     OLED_fbp[location*2+1] = 0xff;
                 }
             }
         }
     }
+}
+
+// First line is line 0
+void OLED_writeLine(int xOffset, int lineNr, const char *text)
+{
+    // clear the line
+    memset(OLED_fbp + (OLED_6x8FONTHEIGHT * lineNr * OLED_vinfo.xres * vinfo.bits_per_pixel/8), 0, OLED_6x8FONTHEIGHT *  OLED_vinfo.xres * vinfo.bits_per_pixel/8);
+    // write the line
+    OLED_drawText6x8(xOffset, lineNr * OLED_6x8FONTHEIGHT, text);
 }
 
 uint8_t* OLED_init()
