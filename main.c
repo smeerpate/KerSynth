@@ -13,8 +13,7 @@ void parseMidiMessage(fluid_synth_t* synth, unsigned char* buffer)
         case 0x80: // Note Off
             fluid_synth_noteoff(synth, status & 0x0F, data1);
             printf("Note Off: Channel %d, Note %d\n", status & 0x0F, data1);
-            OLED_drawText6x8(5, 10+8+8+8+8, ":- ");
-            OLED_drawText6x8(5, 10+8+8+8+8, ":-| ");
+            OLED_writeLine(5, 4, ":-|");
             break;
 
         case 0x90: // Note On
@@ -22,15 +21,13 @@ void parseMidiMessage(fluid_synth_t* synth, unsigned char* buffer)
             {
                 fluid_synth_noteoff(synth, status & 0x0F, data1); // Note On with velocity 0 is Note Off
                 printf("Note Off: Channel %d, Note %d\n", status & 0x0F, data1);
-                OLED_drawText6x8(5, 10+8+8+8+8, ":- ");
-                OLED_drawText6x8(5, 10+8+8+8+8, ":-|");
+                OLED_writeLine(5, 4, ":-|");
             }
             else
             {
                 fluid_synth_noteon(synth, status & 0x0F, data1, data2);
                 printf("Note On: Channel %d, Note %d, Velocity %d\n", status & 0x0F, data1, data2);
-                OLED_drawText6x8(5, 10+8+8+8+8, ":- ");
-                OLED_drawText6x8(5, 10+8+8+8+8, ":-o");
+                OLED_writeLine(5, 4, ":-o");
             }
             break;
 
