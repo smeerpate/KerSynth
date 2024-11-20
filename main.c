@@ -48,6 +48,45 @@ void parseMidiMessage(fluid_synth_t* synth, unsigned char* buffer)
     }
 }
 
+void processMidiBytes(fluid_synth_t* synth, unsigned char *buffer, int nBytesToProcess)
+{
+    int eventStartIdx[128] = {0};
+    int eventIdxPointer = 0;
+    int verbose = 0;
+
+    if (verbose > 0)
+        printf("====\n");
+
+    for (int i = 0; i < nBytesToProcess; i++)
+    {
+        if (verbose > 1)
+            printf("    read 0x%02x\n",buffer[i]);
+        if (buffer[i] & 0x80)
+        {
+            // we hebben een status byte vast...
+            eventStartIdx[eventIdxPointer] = i;
+            if (verbose > 0)
+                printf("    Added 0x%02x MIDI event at buffer idx %d copied to event idx %d\n", buffer[i], i, eventIdxPointer);
+            eventIdxPointer++;
+        }
+    }
+
+    if (verbose > 1)
+    {
+        printf("Events at indexes:\n");
+        for (int i = 0; i < eventIdxPointer; i++)
+            printf("%d ", eventStartIdx[i]);
+        printf("\n");
+    }
+
+    for (int i = 0; i < eventIdxPointer; i++)
+    {
+        if (verbose > 0)
+                printf("    Parsing 0x%02x MIDI event at event idx %d\n", buffer[eventStartIdx[i]], i);
+        parseMidiMessage(synth, &buffer[eventStartIdx[i]]);
+    }
+}
+
 int main()
 {
     OLED_init();
@@ -118,7 +157,7 @@ int main()
 
     // explicitly assign presets to MIDI channels
     //              channels      1   ,2   ,3   ,4   ,5   ,6   ,7   ,8   ,9   ,10  ,11  ,12  ,13  ,14  ,15  ,16
-    int midiChannelPresets[16] = {1   ,21  ,38  ,4   ,5   ,6   ,7   ,8   ,9   ,133-128 ,11  ,12  ,13  ,14  ,15  ,16};
+    int midiChannelPresets[16] = {1   ,17  ,53  ,4   ,5   ,6   ,7   ,8   ,9   ,135-128 ,11  ,12  ,13  ,14  ,15  ,16};
     int midiChannelBanks[16] =   {0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,128 ,0   ,0   ,0   ,0   ,0   ,0};
     for (int chan = 0; chan < 16; chan++)
     {
@@ -163,19 +202,18 @@ int main()
             break;
         }
 
-        int available_bytes = snd_rawmidi_status_get_avail(midi_status);
-        if (available_bytes > 0)
-        {
-            printf("Available bytes: %d\n", available_bytes);
-        }
+//        int available_bytes = snd_rawmidi_status_get_avail(midi_status);
+//        if (available_bytes > 0)
+//        {
+//            printf("Available bytes: %d\n", available_bytes);
+//        }
 
         // read midi bytes from ring buffer and parse
         status = snd_rawmidi_read(midiin, buffer, sizeof(buffer));
         if (status > 0) // status geeft nu het aantal gelezen bytes weer
         {
-            for (int i = 0; i < status; i++)
-                printf("    read %02x\n",buffer[i]);
-            parseMidiMessage(synth, buffer);
+            processMidiBytes(synth, buffer, status);
+            //parseMidiMessage(synth, buffer);
         }
         else if (status < 0 && status != -EAGAIN)
         {
