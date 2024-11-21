@@ -202,12 +202,6 @@ int main()
             break;
         }
 
-//        int available_bytes = snd_rawmidi_status_get_avail(midi_status);
-//        if (available_bytes > 0)
-//        {
-//            printf("Available bytes: %d\n", available_bytes);
-//        }
-
         // read midi bytes from ring buffer and parse
         status = snd_rawmidi_read(midiin, buffer, sizeof(buffer));
         if (status > 0) // status geeft nu het aantal gelezen bytes weer
