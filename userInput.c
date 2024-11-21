@@ -67,9 +67,9 @@ void UI_enablePullUp(int gpio)
 
 int UI_init()
 {
-	enablePullUp(5); // pullup for A
-	enablePullUp(6); // pullup for B
-	enablePullUp(16); // pullup for pushbutton
+	UI_enablePullUp(5); // pullup for A
+	UI_enablePullUp(6); // pullup for B
+	UI_enablePullUp(16); // pullup for pushbutton
 	fd = open(device, O_RDONLY);
     if (fd == -1)
 	{
