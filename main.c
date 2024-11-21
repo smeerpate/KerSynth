@@ -220,9 +220,9 @@ int main()
 
     // Open MIDI input port
     //snd_rawmidi_t *midiin = NULL;
-    //snd_rawmidi_open(&midiin, NULL, "hw:1,0,0", SND_RAWMIDI_NONBLOCK);
-    //if (!midiin)
-	if (openFirstAvailableMidi(&midiin, &midiout) != 0)
+    snd_rawmidi_open(&midiin, NULL, "hw:1,0,0", SND_RAWMIDI_NONBLOCK);
+    if (!midiin)
+	//if (openFirstAvailableMidi(&midiin, &midiout) != 0)
     {
         OLED_clear();
         OLED_drawText6x8(5, 10, "MIDI init Error");
