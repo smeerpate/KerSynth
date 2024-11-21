@@ -188,9 +188,6 @@ int main()
         return 1;
     }
 
-    // prepare structures for checking available midi bytes for readout
-    snd_rawmidi_status_t *midi_status;
-    snd_rawmidi_status_malloc(&midi_status);
 
     // Application loop: Read and process MIDI events
     unsigned char buffer[1024];
@@ -225,7 +222,6 @@ int main()
 
     // Clean up
     snd_rawmidi_close(midiin);
-    snd_rawmidi_status_free(midi_status);
     delete_fluid_audio_driver(adriver);
     delete_fluid_synth(synth);
     delete_fluid_settings(settings);
