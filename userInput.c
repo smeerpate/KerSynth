@@ -27,14 +27,14 @@
 |     |     |      0V |      |   | 39 || 40 | 0 | IN   | GPIO29  | 29  | 21  |
 +-----+-----+---------+------+---+----++----+---+------+---------+-----+-----+
 */
-#incude "userInput.h"
+#include "userInput.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
-#include <bcm2835.h>
+#include <linux/input.h>
 
 #define GPIO_BASE 0x3F200000
 
