@@ -3,6 +3,46 @@
 #include <alsa/asoundlib.h>
 #include <fluidsynth.h>
 
+int openFirstAvailableMidi(snd_rawmidi_t **input, snd_rawmidi_t **output) {
+    int card = -1;
+    int device = -1;
+    int subdevice = 0;
+    int err;
+    char name[32];
+
+    // Iterate over all sound cards
+    if (snd_card_next(&card) < 0 || card < 0) {
+        fprintf(stderr, "No sound cards found.\n");
+        return -1;
+    }
+
+    while (card >= 0) {
+        device = -1;
+
+        // Iterate over all devices on this card
+        while (snd_ctl_rawmidi_next_device(card, &device) >= 0 && device >= 0) {
+            snprintf(name, sizeof(name), "hw:%d,%d,%d", card, device, subdevice);
+
+            // Try to open the device
+            err = snd_rawmidi_open(input, output, name, 0);
+            if (err == 0) {
+                printf("Opened MIDI device: %s\n", name);
+                return 0;
+            } else {
+                fprintf(stderr, "Failed to open MIDI device %s: %s\n", name, snd_strerror(err));
+            }
+        }
+
+        // Move to the next card
+        if (snd_card_next(&card) < 0) {
+            break;
+        }
+    }
+
+    fprintf(stderr, "No available MIDI devices found.\n");
+    return -1;
+}
+
 void parseMidiMessage(fluid_synth_t* synth, unsigned char* buffer)
 {
     unsigned char status = buffer[0];
@@ -90,6 +130,9 @@ void processMidiBytes(fluid_synth_t* synth, unsigned char *buffer, int nBytesToP
 
 int main()
 {
+	snd_rawmidi_t *midiin = NULL;
+    snd_rawmidi_t *midiout = NULL;
+	
     OLED_init();
     OLED_clear();
     OLED_drawText6x8(5, 10, "Hallo Freddy!");
@@ -176,9 +219,10 @@ int main()
 
 
     // Open MIDI input port
-    snd_rawmidi_t *midiin = NULL;
-    snd_rawmidi_open(&midiin, NULL, "hw:1,0,0", SND_RAWMIDI_NONBLOCK);
-    if (!midiin)
+    //snd_rawmidi_t *midiin = NULL;
+    //snd_rawmidi_open(&midiin, NULL, "hw:1,0,0", SND_RAWMIDI_NONBLOCK);
+    //if (!midiin)
+	if (openFirstAvailableMidi(&input, &output) != 0)
     {
         OLED_clear();
         OLED_drawText6x8(5, 10, "MIDI init Error");
@@ -187,6 +231,7 @@ int main()
         delete_fluid_settings(settings);
         return 1;
     }
+	
 
 
     // Application loop: Read and process MIDI events
@@ -221,7 +266,8 @@ int main()
     }
 
     // Clean up
-    snd_rawmidi_close(midiin);
+	if (midiin) snd_rawmidi_close(midiin);
+    if (midiout) snd_rawmidi_close(midiout);
     delete_fluid_audio_driver(adriver);
     delete_fluid_synth(synth);
     delete_fluid_settings(settings);
