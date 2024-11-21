@@ -1,4 +1,5 @@
 #include "OLED.h"
+#include "UI.h"
 #include <alsa/asoundlib.h>
 #include <fluidsynth.h>
 
@@ -93,6 +94,7 @@ int main()
     OLED_clear();
     OLED_drawText6x8(5, 10, "Hallo Freddy!");
     OLED_drawText6x8(5, 10+8, "We gaan dat hier");
+	UI_init();
     OLED_drawText6x8(5, 10+8+8, "ne keer starten e...");
 
     // Create settings
@@ -216,6 +218,8 @@ int main()
             break;
         }
 
+		UI_checkRotary();
+		
         usleep(500);
     }
 

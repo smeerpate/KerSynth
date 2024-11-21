@@ -37,7 +37,7 @@
 
 #define GPIO_BASE 0x3F200000
 
-const char *device = "/dev/input/eventX"; // Identify the Input Device with ls /dev/input/ (Look for a device like /dev/input/eventX where X is the event number)
+const char *device = "/dev/input/event0"; // Identify the Input Device with ls /dev/input/ (Look for a device like /dev/input/eventX where X is the event number)
 struct input_event ev;
 int fd;
 
