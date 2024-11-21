@@ -222,7 +222,7 @@ int main()
     //snd_rawmidi_t *midiin = NULL;
     //snd_rawmidi_open(&midiin, NULL, "hw:1,0,0", SND_RAWMIDI_NONBLOCK);
     //if (!midiin)
-	if (openFirstAvailableMidi(&input, &output) != 0)
+	if (openFirstAvailableMidi(&midiin, &midiout) != 0)
     {
         OLED_clear();
         OLED_drawText6x8(5, 10, "MIDI init Error");
@@ -239,13 +239,6 @@ int main()
     int status;
     while (1)
     {
-        // read midi status in order to be able to check the amount of bytes to read out
-        status = snd_rawmidi_status(midiin, midi_status);
-        if (status < 0) {
-            fprintf(stderr, "Error getting MIDI status: %s\n", snd_strerror(status));
-            break;
-        }
-
         // read midi bytes from ring buffer and parse
         status = snd_rawmidi_read(midiin, buffer, sizeof(buffer));
         if (status > 0) // status geeft nu het aantal gelezen bytes weer
