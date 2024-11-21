@@ -3,12 +3,17 @@
 #include <alsa/asoundlib.h>
 #include <fluidsynth.h>
 
-int openFirstAvailableMidi(snd_rawmidi_t **input, snd_rawmidi_t **output) {
+int openFirstAvailableMidi(snd_rawmidi_t **input, snd_rawmidi_t **output)
+{
     int card = -1;
     int device = -1;
     int subdevice = 0;
     int err;
     char name[32];
+    snd_ctl_t *ctl;
+    snd_ctl_card_info_t *info;
+
+    snd_ctl_card_info_alloca(&info);
 
     // Iterate over all sound cards
     if (snd_card_next(&card) < 0 || card < 0) {
@@ -17,22 +22,37 @@ int openFirstAvailableMidi(snd_rawmidi_t **input, snd_rawmidi_t **output) {
     }
 
     while (card >= 0) {
-        device = -1;
+        snprintf(name, sizeof(name), "hw:%d", card);
+        if ((err = snd_ctl_open(&ctl, name, 0)) < 0) {
+            fprintf(stderr, "Cannot open control for card %d: %s\n", card, snd_strerror(err));
+            goto next_card;
+        }
 
+        if ((err = snd_ctl_card_info(ctl, info)) < 0) {
+            fprintf(stderr, "Cannot get info for card %d: %s\n", card, snd_strerror(err));
+            snd_ctl_close(ctl);
+            goto next_card;
+        }
+
+        device = -1;
         // Iterate over all devices on this card
-        while (snd_ctl_rawmidi_next_device(card, &device) >= 0 && device >= 0) {
+        while (snd_ctl_rawmidi_next_device(ctl, &device) >= 0 && device >= 0) {
             snprintf(name, sizeof(name), "hw:%d,%d,%d", card, device, subdevice);
 
             // Try to open the device
             err = snd_rawmidi_open(input, output, name, 0);
             if (err == 0) {
                 printf("Opened MIDI device: %s\n", name);
+                snd_ctl_close(ctl);
                 return 0;
             } else {
                 fprintf(stderr, "Failed to open MIDI device %s: %s\n", name, snd_strerror(err));
             }
         }
 
+        snd_ctl_close(ctl);
+
+    next_card:
         // Move to the next card
         if (snd_card_next(&card) < 0) {
             break;
@@ -220,9 +240,9 @@ int main()
 
     // Open MIDI input port
     //snd_rawmidi_t *midiin = NULL;
-    snd_rawmidi_open(&midiin, NULL, "hw:1,0,0", SND_RAWMIDI_NONBLOCK);
-    if (!midiin)
-	//if (openFirstAvailableMidi(&midiin, &midiout) != 0)
+    //snd_rawmidi_open(&midiin, NULL, "hw:1,0,0", SND_RAWMIDI_NONBLOCK);
+    //if (!midiin)
+	if (openFirstAvailableMidi(&midiin, &midiout) != 0)
     {
         OLED_clear();
         OLED_drawText6x8(5, 10, "MIDI init Error");
