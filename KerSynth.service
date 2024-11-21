@@ -1,0 +1,13 @@
+[Unit]
+Description=KerSynth Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/home/kerman/KerSynth/kersynth
+WorkingDirectory=/home/kerman/KerSynth
+User=root
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
