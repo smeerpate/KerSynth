@@ -26,6 +26,18 @@ Run this script:
 `
     ./build.sh
 `
+## Auto startup
+Copy KerSynth.service to etc/systemd/system and enable the service. You can also start the service right away if you want... 
+```sh
+sudo cp /etc/systemd/system/KerSynth.service
+sudo systemctl enable KerSynth.service
+
+sudo systemctl start KerSynth.service
+```
+Check the service status with
+```sh
+sudo systemctl status KerSynth.service
+```
 ## Hardware
 Connect the OLED as follows:
 | OLED pin    | RPi4 BCM pin # |
