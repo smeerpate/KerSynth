@@ -39,7 +39,8 @@ Check the service status with
 sudo systemctl status KerSynth.service
 ```
 ## Hardware
-Connect the OLED as follows:
+Connect the hardware as below.
+### OLED
 | OLED pin    | RPi4 BCM pin # |
 | ----------- | --------- |
 | DC          | 24        |
@@ -49,5 +50,14 @@ Connect the OLED as follows:
 | CS          | 8 (CE0)   |
 | VCC          | 3V3   |
 | VEE          | GND   |
+
+No pull ups are required.
+
+### Encoder
+| Encoder pin | RPi4 BCM pin # |
+| ----------- | --------- |
+| A           | 17        |
+| GND         | GND       |
+| B           | 27        |
 
 No pull ups are required.
