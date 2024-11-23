@@ -1,4 +1,8 @@
 #!/bin/bash
+rm main.o
+rm OLED.o
+rm userInput.o
+rm kersynth
 
 # Compile each module
 gcc -c main.c -o main.o

@@ -1,6 +1,6 @@
-// een rotary encoder wordt aangesloten op GPIO (BCM nummering) 5(A) en 6(B) en 16(drukken)
+// een rotary encoder wordt aangesloten op GPIO (BCM nummering) 17(A) en 27(B) en 22(drukken)
 // overlay moet enabled zijn in /boot/firmware/config.txt
-// dtoverlay=rotary-encoder,pin_a=5,pin_b=6,relative_axis=1
+// dtoverlay=rotary-encoder,pin_a=17,pin_b=27,relative_axis=1
 /*
 +-----+-----+---------+------+---+---Pi 4---+---+------+---------+-----+-----+
 | BCM | wPi |   Name  | Mode | V | Physical | V | Mode | Name    | wPi | BCM |
@@ -35,64 +35,86 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <linux/input.h>
+#include <errno.h>
 
 #define GPIO_BASE 0x3F200000
 
 const char *device = "/dev/input/event0"; // Identify the Input Device with ls /dev/input/ (Look for a device like /dev/input/eventX where X is the event number)
 struct input_event ev;
-int fd;
+int fd = -1;
 
-void UI_enablePullUp(int gpio)
+int UI_enablePullUp(int gpio)
 {
     volatile unsigned int *gpio_base;
     int mem_fd = open("/dev/mem", O_RDWR | O_SYNC);
-    if (mem_fd < 0) 
-	{
-        perror("open");
-        exit(EXIT_FAILURE);
+    if (mem_fd < 0)
+    {
+        printf("[ERROR] Opening /dev/mem\n");
+        return(EXIT_FAILURE);
     }
 
     gpio_base = (unsigned int *)mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, GPIO_BASE);
     if (gpio_base == MAP_FAILED)
-	{
-        perror("mmap");
+    {
+        printf("[ERROR] mmap\n");
         close(mem_fd);
-        exit(EXIT_FAILURE);
+        return(EXIT_FAILURE);
     }
 
     // Enable pull-up resistor
     *(gpio_base + (gpio / 10)) |= (1 << ((gpio % 10) * 3));
     close(mem_fd);
+    printf("[INFO] Pull-up gezet voor BCM GPIO %d\n", gpio);
+    return 0;
 }
 
 int UI_init()
 {
-	UI_enablePullUp(5); // pullup for A
-	UI_enablePullUp(6); // pullup for B
-	UI_enablePullUp(16); // pullup for pushbutton
-	fd = open(device, O_RDONLY);
+    //UI_enablePullUp(17); // pullup for A
+    //UI_enablePullUp(27); // pullup for B
+    //UI_enablePullUp(22); // pullup for pushbutton
+    fd = open(device, O_RDONLY | O_NONBLOCK);
     if (fd == -1)
-	{
-        perror("Failed to open input device");
+    {
+        perror("[ERROR] Failed to open input device\n");
         return EXIT_FAILURE;
     }
-	return 0;
+    printf("[INFO] User input init klaar.\n");
+    return 0;
 }
 
 int UI_checkRotary()
 {
-	if (read(fd, &ev, sizeof(struct input_event)) == -1)
+    int verbose = 1;
+
+    if (fd != -1)
+    {
+        ssize_t bytes = read(fd, &ev, sizeof(ev));
+        if (bytes == -1)
 	{
-		perror("Failed to read input event");
-		close(fd);
-		return EXIT_FAILURE;
+            if (errno == EAGAIN)
+            {
+                return 0;
+            }
+            else
+            {
+                printf("[ERROR] Failed to read input event\n");
+	        close(fd);
+                fd = -1;
+	        return EXIT_FAILURE;
+            }
 	}
 
+        if (verbose > 0) printf("[INFO] Aantal event bytes gelezen = %d\n", bytes);
 	// Check for rotary encoder events
 	if (ev.type == EV_REL && ev.code == REL_X)
 	{
-		printf("Rotary Encoder Value: %d\n", ev.value);
+            printf("[INFO] Rotary Encoder Value: %d\n", ev.value);
 	}
-	return 0;
+    }
+    else
+    {
+        printf("[WARNING] Geen file descriptor voor user input\n");
+    }
+    return 0;
 }
-

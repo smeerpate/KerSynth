@@ -40,7 +40,7 @@ int openFirstAvailableMidi(snd_rawmidi_t **input, snd_rawmidi_t **output)
             snprintf(name, sizeof(name), "hw:%d,%d,%d", card, device, subdevice);
 
             // Try to open the device
-            err = snd_rawmidi_open(input, output, name, 0);
+            err = snd_rawmidi_open(input, output, name, SND_RAWMIDI_NONBLOCK);
             if (err == 0) {
                 printf("Opened MIDI device: %s\n", name);
                 snd_ctl_close(ctl);
@@ -70,12 +70,13 @@ void parseMidiMessage(fluid_synth_t* synth, unsigned char* buffer)
     unsigned char data2 = buffer[2];
 
     unsigned char midiChannel = (status & 0x0F) + 1;
+    int verbose = 0;
 
     switch (status & 0xF0)
     {
         case 0x80: // Note Off
             fluid_synth_noteoff(synth, status & 0x0F, data1);
-            printf("Note Off: Channel %d, Note %d\n", midiChannel, data1);
+            if (verbose > 0) printf("Note Off: Channel %d, Note %d\n", midiChannel, data1);
             OLED_writeLine(5, 4, ":-|");
             break;
 
@@ -83,25 +84,25 @@ void parseMidiMessage(fluid_synth_t* synth, unsigned char* buffer)
             if (data2 == 0)
             {
                 fluid_synth_noteoff(synth, status & 0x0F, data1); // Note On with velocity 0 is Note Off
-                printf("Note Off: Channel %d, Note %d\n", midiChannel, data1);
+                if (verbose > 0) printf("Note Off: Channel %d, Note %d\n", midiChannel, data1);
                 OLED_writeLine(5, 4, ":-|");
             }
             else
             {
                 fluid_synth_noteon(synth, status & 0x0F, data1, data2);
-                printf("Note On: Channel %d, Note %d, Velocity %d\n", midiChannel, data1, data2);
+                if (verbose > 0) printf("Note On: Channel %d, Note %d, Velocity %d\n", midiChannel, data1, data2);
                 OLED_writeLine(5, 4, ":-o");
             }
             break;
 
         case 0xC0: // Program Change
             fluid_synth_program_change(synth, status & 0x0F, data1);
-            printf("Program Change: Channel %d, Program %d\n", midiChannel, data1);
+            if (verbose > 0) printf("Program Change: Channel %d, Program %d\n", midiChannel, data1);
             break;
 
         case 0xE0: // Pitch Bend
             fluid_synth_pitch_bend(synth, status & 0x0F, (data2 << 7) | data1);
-            printf("Pitch Bend: Channel %d, Value %d\n", midiChannel, (data2 << 7) | data1);
+            if (verbose > 0) printf("Pitch Bend: Channel %d, Value %d\n", midiChannel, (data2 << 7) | data1);
             break;
 
         default:
@@ -150,14 +151,14 @@ void processMidiBytes(fluid_synth_t* synth, unsigned char *buffer, int nBytesToP
 
 int main()
 {
-	snd_rawmidi_t *midiin = NULL;
+    snd_rawmidi_t *midiin = NULL;
     snd_rawmidi_t *midiout = NULL;
-	
+
     OLED_init();
     OLED_clear();
     OLED_drawText6x8(5, 10, "Hallo Freddy!");
     OLED_drawText6x8(5, 10+8, "We gaan dat hier");
-	UI_init();
+    UI_init();
     OLED_drawText6x8(5, 10+8+8, "ne keer starten e...");
 
     // Create settings
@@ -242,7 +243,7 @@ int main()
     //snd_rawmidi_t *midiin = NULL;
     //snd_rawmidi_open(&midiin, NULL, "hw:1,0,0", SND_RAWMIDI_NONBLOCK);
     //if (!midiin)
-	if (openFirstAvailableMidi(&midiin, &midiout) != 0)
+    if (openFirstAvailableMidi(&midiin, &midiout) != 0)
     {
         OLED_clear();
         OLED_drawText6x8(5, 10, "MIDI init Error");
@@ -251,7 +252,6 @@ int main()
         delete_fluid_settings(settings);
         return 1;
     }
-	
 
 
     // Application loop: Read and process MIDI events
@@ -273,13 +273,12 @@ int main()
             break;
         }
 
-		UI_checkRotary();
-		
+	UI_checkRotary();
         usleep(500);
     }
 
     // Clean up
-	if (midiin) snd_rawmidi_close(midiin);
+    if (midiin) snd_rawmidi_close(midiin);
     if (midiout) snd_rawmidi_close(midiout);
     delete_fluid_audio_driver(adriver);
     delete_fluid_synth(synth);
