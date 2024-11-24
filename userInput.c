@@ -136,9 +136,9 @@ int UI_checkButton()
         }
 
         if (verbose > 0) printf("[INFO] Aantal button event bytes gelezen = %d\n", bytes);
-        if (ev.type == EV_KEY)
+        if (buttonEv.type == EV_KEY)
         {
-            printf("Key %d %s\n", ev.code, ev.value ? "pressed" : "released");
+            printf("Key %d %s\n", buttonEv.code, buttonEv.value ? "pressed" : "released");
         }
     }
     else
