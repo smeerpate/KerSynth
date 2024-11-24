@@ -77,9 +77,25 @@ void UI_Task()
     switch (uiState)
     {
         case ST_IDLE:
+            if (buttonEv.type == EV_KEY)
+            {
+                if (buttonEv.code == 68 && buttonEv.value)
+                {
+                    uiState = ST_MIDICHSELECT;
+                    OLED_writeLine(0, 0, "MIDI Ch 1");
+                }
+            }
             break;
         
         case ST_MIDICHSELECT:
+            if (buttonEv.type == EV_KEY)
+            {
+                if (buttonEv.code == 68 && buttonEv.value)
+                {
+                    uiState = ST_IDLE;
+                    OLED_clear();
+                }
+            }
             break;
             
         default:
