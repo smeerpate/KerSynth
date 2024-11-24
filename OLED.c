@@ -130,9 +130,13 @@ void OLED_drawText6x8(int x, int y, const char *text)
             {
                 if (font6x8_basic[(int)text[i]][col] & (1 << row))
                 {
-                    location = (x + col + (i * 6) + OLED_vinfo.xoffset) + ((y + row + OLED_vinfo.yoffset) * OLED_vinfo.xres);
-                    OLED_fbp[location*2] = 0xff; // Set pixel to white
-                    OLED_fbp[location*2+1] = 0xff;
+                    int xCoord = (x + col + (i * 6) + OLED_vinfo.xoffset);
+                    if (xCoord < OLED_vinfo.xres)
+                    {
+                        location = xCoord + ((y + row + OLED_vinfo.yoffset) * OLED_vinfo.xres);
+                        OLED_fbp[location*2] = 0xff; // Set pixel to white
+                        OLED_fbp[location*2+1] = 0xff;
+                    }
                 }
             }
         }
