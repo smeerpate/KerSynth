@@ -69,7 +69,7 @@ int UI_init()
     return 0;
 }
 
-void UI_Task()
+void UI_Task(fluid_synth_t* synth)
 {
     UI_checkRotary();
     UI_checkButton();

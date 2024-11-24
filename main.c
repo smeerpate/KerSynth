@@ -1,6 +1,6 @@
 #include "userInput.h"
 #include <alsa/asoundlib.h>
-#include <fluidsynth.h>
+//#include <fluidsynth.h> // zit al in userInput.h
 
 int openFirstAvailableMidi(snd_rawmidi_t **input, snd_rawmidi_t **output)
 {
@@ -273,7 +273,6 @@ int main()
         if (status > 0) // status geeft nu het aantal gelezen bytes weer
         {
             processMidiBytes(synth, buffer, status);
-            //parseMidiMessage(synth, buffer);
         }
         else if (status < 0 && status != -EAGAIN)
         {
@@ -282,7 +281,7 @@ int main()
             break;
         }
 
-        UI_Task();
+        UI_Task(synth);
         usleep(500);
     }
 
