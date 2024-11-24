@@ -44,6 +44,7 @@ struct input_event rotaryEncEv;
 struct input_event buttonEv;
 int rotaryEncFd = -1;
 int buttonFd = -1;
+uiState_t uiState = ST_IDLE;
 
 int UI_init()
 {
@@ -70,7 +71,20 @@ int UI_init()
 
 void UI_Task()
 {
+    UI_checkRotary();
+    UI_checkButton();
     
+    switch (uiState)
+    {
+        case ST_IDLE:
+            break;
+        
+        case ST_MIDICHSELECT:
+            break;
+            
+        default:
+            break;
+    }
 }
 
 void UI_writeMessageToOLED(int xOffset, int lineNr, const char *text)
