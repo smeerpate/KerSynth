@@ -28,6 +28,7 @@
 +-----+-----+---------+------+---+----++----+---+------+---------+-----+-----+
 */
 #include "userInput.h"
+#include "OLED.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -59,8 +60,22 @@ int UI_init()
         printf("[ERROR] Failed to open input for rotary encoder\n");
         return EXIT_FAILURE;
     }
+    
+    OLED_init();
+    OLED_clear();
+    OLED_writeLine(5, 0, "UI init done...");
     printf("[INFO] User input init klaar.\n");
     return 0;
+}
+
+void UI_Task()
+{
+    
+}
+
+void UI_writeMessageToOLED(int xOffset, int lineNr, const char *text)
+{
+    OLED_writeLine(xOffset, lineNr, text);
 }
 
 int UI_checkRotary()
@@ -71,7 +86,7 @@ int UI_checkRotary()
     {
         ssize_t bytes = read(rotaryEncFd, &rotaryEncEv, sizeof(rotaryEncEv));
         if (bytes == -1)
-	{
+        {
             if (errno == EAGAIN)
             {
                 return 0;
@@ -79,18 +94,18 @@ int UI_checkRotary()
             else
             {
                 printf("[ERROR] Failed to read input event\n");
-	        close(rotaryEncFd);
+            close(rotaryEncFd);
                 rotaryEncFd = -1;
-	        return EXIT_FAILURE;
+            return EXIT_FAILURE;
             }
-	}
+        }
 
         if (verbose > 0) printf("[INFO] Aantal encoder event bytes gelezen = %d\n", bytes);
-	// Check for rotary encoder events
-	if (rotaryEncEv.type == EV_REL && rotaryEncEv.code == REL_X)
-	{
+        // Check for rotary encoder events
+        if (rotaryEncEv.type == EV_REL && rotaryEncEv.code == REL_X)
+        {
             printf("[INFO] Rotary Encoder Value: %d\n", rotaryEncEv.value);
-	}
+        }
     }
     else
     {
@@ -126,4 +141,14 @@ int UI_checkButton()
             printf("Key %d %s\n", ev.code, ev.value ? "pressed" : "released");
         }
     }
+    else
+    {
+        printf("[WARNING] Geen file descriptor voor user input\n");
+    }
+    return 0;
+}
+
+void UI_dispose()
+{
+    OLED_dispose();
 }

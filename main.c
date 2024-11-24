@@ -1,4 +1,3 @@
-#include "OLED.h"
 #include "userInput.h"
 #include <alsa/asoundlib.h>
 #include <fluidsynth.h>
@@ -77,7 +76,7 @@ void parseMidiMessage(fluid_synth_t* synth, unsigned char* buffer)
         case 0x80: // Note Off
             fluid_synth_noteoff(synth, status & 0x0F, data1);
             if (verbose > 0) printf("Note Off: Channel %d, Note %d\n", midiChannel, data1);
-            OLED_writeLine(5, 4, ":-|");
+            UI_writeMessageToOLED(5, 4, ":-|");
             break;
 
         case 0x90: // Note On
@@ -85,13 +84,13 @@ void parseMidiMessage(fluid_synth_t* synth, unsigned char* buffer)
             {
                 fluid_synth_noteoff(synth, status & 0x0F, data1); // Note On with velocity 0 is Note Off
                 if (verbose > 0) printf("Note Off: Channel %d, Note %d\n", midiChannel, data1);
-                OLED_writeLine(5, 4, ":-|");
+                UI_writeMessageToOLED(5, 4, ":-|");
             }
             else
             {
                 fluid_synth_noteon(synth, status & 0x0F, data1, data2);
                 if (verbose > 0) printf("Note On: Channel %d, Note %d, Velocity %d\n", midiChannel, data1, data2);
-                OLED_writeLine(5, 4, ":-o");
+                UI_writeMessageToOLED(5, 4, ":-o");
             }
             break;
 
@@ -154,19 +153,19 @@ int main()
     snd_rawmidi_t *midiin = NULL;
     snd_rawmidi_t *midiout = NULL;
 
-    OLED_init();
-    OLED_clear();
-    OLED_drawText6x8(5, 10, "Hallo Freddy!");
-    OLED_drawText6x8(5, 10+8, "We gaan dat hier");
+    //OLED_init();
+    //OLED_clear();
+    //OLED_drawText6x8(5, 10, "Hallo Freddy!");
+    //OLED_drawText6x8(5, 10+8, "We gaan dat hier");
     UI_init();
-    OLED_drawText6x8(5, 10+8+8, "ne keer starten e...");
+    //OLED_drawText6x8(5, 10+8+8, "ne keer starten e...");
 
     // Create settings
     fluid_settings_t* settings = new_fluid_settings();
     if (!settings)
     {
-        OLED_clear();
-        OLED_drawText6x8(5, 10, "Settings init Error");
+        UI_writeMessageToOLED(5, 1, "Error!");
+        UI_writeMessageToOLED(5, 2, "Settings init Error");
         return 1;
     }
 
@@ -174,8 +173,8 @@ int main()
     fluid_synth_t* synth = new_fluid_synth(settings);
     if (!synth)
     {
-        OLED_clear();
-        OLED_drawText6x8(5, 10, "Synth init Error");
+        UI_writeMessageToOLED(5, 1, "Error!");
+        UI_writeMessageToOLED(5, 2, "Synth init Error");
         delete_fluid_settings(settings);
         return 1;
     }
@@ -184,8 +183,8 @@ int main()
     int sfont_id = fluid_synth_sfload(synth, "/home/kerman/FluidSynth/fluidsynth/sf2/VintageDreamsWaves-v2.sf2", 1);
     if (sfont_id == FLUID_FAILED)
     {
-        OLED_clear();
-        OLED_drawText6x8(5, 10, "SFont Error");
+        UI_writeMessageToOLED(5, 1, "Error!");
+        UI_writeMessageToOLED(5, 2, "Failed to load SFont");
         delete_fluid_synth(synth);
         delete_fluid_settings(settings);
         return 1;
@@ -195,8 +194,15 @@ int main()
     fluid_sfont_t* sfont = fluid_synth_get_sfont_by_id(synth, sfont_id);
     if (!sfont) {
         fprintf(stderr, "Failed to get SoundFont\n");
+        UI_writeMessageToOLED(5, 1, "Error!");
+        UI_writeMessageToOLED(5, 2, "Failed to get SFont");
+        delete_fluid_synth(synth);
+        delete_fluid_settings(settings);
         return 1;
     }
+    
+    UI_writeMessageToOLED(5, 1, "Sound font loaded:");
+    UI_writeMessageToOLED(5, 2, "VintageDreamsWaves-v2.sf2");
 
     // Iterate through presets and print their names
     int sfIndex = 0;
@@ -214,8 +220,8 @@ int main()
     fluid_audio_driver_t* adriver = new_fluid_audio_driver(settings, synth);
     if (!adriver)
     {
-        OLED_clear();
-        OLED_drawText6x8(5, 10, "Audio init Error");
+        UI_writeMessageToOLED(5, 1, "Error!");
+        UI_writeMessageToOLED(5, 2, "Audio init");
         delete_fluid_synth(synth);
         delete_fluid_settings(settings);
         return 1;
@@ -245,8 +251,8 @@ int main()
     //if (!midiin)
     if (openFirstAvailableMidi(&midiin, &midiout) != 0)
     {
-        OLED_clear();
-        OLED_drawText6x8(5, 10, "MIDI init Error");
+        UI_writeMessageToOLED(5, 1, "Error!");
+        UI_writeMessageToOLED(5, 2, "MIDI init");
         delete_fluid_audio_driver(adriver);
         delete_fluid_synth(synth);
         delete_fluid_settings(settings);
@@ -268,12 +274,12 @@ int main()
         }
         else if (status < 0 && status != -EAGAIN)
         {
-            OLED_clear();
-            OLED_drawText6x8(5, 10, "MIDI read Error");
+            UI_writeMessageToOLED(5, 1, "Error!");
+            UI_writeMessageToOLED(5, 2, "MIDI read");
             break;
         }
 
-	UI_checkRotary();
+        UI_checkRotary();
         UI_checkButton();
         usleep(500);
     }
@@ -284,7 +290,7 @@ int main()
     delete_fluid_audio_driver(adriver);
     delete_fluid_synth(synth);
     delete_fluid_settings(settings);
-    OLED_dispose();
+    UI_dispose();
 
     return 0;
 }
