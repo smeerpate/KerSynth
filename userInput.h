@@ -5,7 +5,7 @@ enum uiStates
 {
     ST_IDLE,
     ST_MIDICHSELECT,
-    ST_SFSELECT
+    ST_SFSELECT,
     ST_MAX_STATES
 }uiState_t;
 
