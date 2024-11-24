@@ -261,6 +261,7 @@ int main()
     }
     
     usleep(1500000);
+    UI_clearOLED();
 
     // Application loop: Read and process MIDI events
     unsigned char buffer[1024];

@@ -78,6 +78,11 @@ void UI_writeMessageToOLED(int xOffset, int lineNr, const char *text)
     OLED_writeLine(xOffset, lineNr, text);
 }
 
+void UI_clearOLED()
+{
+    OLED_clear();
+}
+
 int UI_checkRotary()
 {
     int verbose = 1;
