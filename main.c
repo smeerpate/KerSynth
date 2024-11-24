@@ -274,6 +274,7 @@ int main()
         }
 
 	UI_checkRotary();
+        UI_checkButton();
         usleep(500);
     }
 

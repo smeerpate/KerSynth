@@ -3,5 +3,6 @@
 
 int UI_init();
 int UI_checkRotary();
+int UI_checkButton();
 
 #endif

@@ -37,46 +37,26 @@
 #include <linux/input.h>
 #include <errno.h>
 
-#define GPIO_BASE 0x3F200000
-
-const char *device = "/dev/input/event0"; // Identify the Input Device with ls /dev/input/ (Look for a device like /dev/input/eventX where X is the event number)
-struct input_event ev;
-int fd = -1;
-
-int UI_enablePullUp(int gpio)
-{
-    volatile unsigned int *gpio_base;
-    int mem_fd = open("/dev/mem", O_RDWR | O_SYNC);
-    if (mem_fd < 0)
-    {
-        printf("[ERROR] Opening /dev/mem\n");
-        return(EXIT_FAILURE);
-    }
-
-    gpio_base = (unsigned int *)mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, GPIO_BASE);
-    if (gpio_base == MAP_FAILED)
-    {
-        printf("[ERROR] mmap\n");
-        close(mem_fd);
-        return(EXIT_FAILURE);
-    }
-
-    // Enable pull-up resistor
-    *(gpio_base + (gpio / 10)) |= (1 << ((gpio % 10) * 3));
-    close(mem_fd);
-    printf("[INFO] Pull-up gezet voor BCM GPIO %d\n", gpio);
-    return 0;
-}
+const char *button = "/dev/input/event0";
+const char *rotEncoder = "/dev/input/event1"; // Identify the Input Device with ls /dev/input/ (Look for a device like /dev/input/eventX where X is the event number)
+struct input_event rotaryEncEv;
+struct input_event buttonEv;
+int rotaryEncFd = -1;
+int buttonFd = -1;
 
 int UI_init()
 {
-    //UI_enablePullUp(17); // pullup for A
-    //UI_enablePullUp(27); // pullup for B
-    //UI_enablePullUp(22); // pullup for pushbutton
-    fd = open(device, O_RDONLY | O_NONBLOCK);
-    if (fd == -1)
+    buttonFd = open(button, O_RDONLY | O_NONBLOCK);
+    if (buttonFd == -1)
     {
-        perror("[ERROR] Failed to open input device\n");
+        printf("[ERROR] kon button niet openen.\n");
+        return EXIT_FAILURE;
+    }
+
+    rotaryEncFd = open(rotEncoder, O_RDONLY | O_NONBLOCK);
+    if (rotaryEncFd == -1)
+    {
+        printf("[ERROR] Failed to open input for rotary encoder\n");
         return EXIT_FAILURE;
     }
     printf("[INFO] User input init klaar.\n");
@@ -87,9 +67,9 @@ int UI_checkRotary()
 {
     int verbose = 1;
 
-    if (fd != -1)
+    if (rotaryEncFd != -1)
     {
-        ssize_t bytes = read(fd, &ev, sizeof(ev));
+        ssize_t bytes = read(rotaryEncFd, &rotaryEncEv, sizeof(rotaryEncEv));
         if (bytes == -1)
 	{
             if (errno == EAGAIN)
@@ -99,17 +79,17 @@ int UI_checkRotary()
             else
             {
                 printf("[ERROR] Failed to read input event\n");
-	        close(fd);
-                fd = -1;
+	        close(rotaryEncFd);
+                rotaryEncFd = -1;
 	        return EXIT_FAILURE;
             }
 	}
 
-        if (verbose > 0) printf("[INFO] Aantal event bytes gelezen = %d\n", bytes);
+        if (verbose > 0) printf("[INFO] Aantal encoder event bytes gelezen = %d\n", bytes);
 	// Check for rotary encoder events
-	if (ev.type == EV_REL && ev.code == REL_X)
+	if (rotaryEncEv.type == EV_REL && rotaryEncEv.code == REL_X)
 	{
-            printf("[INFO] Rotary Encoder Value: %d\n", ev.value);
+            printf("[INFO] Rotary Encoder Value: %d\n", rotaryEncEv.value);
 	}
     }
     else
@@ -117,4 +97,29 @@ int UI_checkRotary()
         printf("[WARNING] Geen file descriptor voor user input\n");
     }
     return 0;
+}
+
+int UI_checkButton()
+{
+    int verbose = 1;
+
+    if (buttonFd != -1)
+    {
+        ssize_t bytes = read(buttonFd, &buttonEv, sizeof(buttonEv));
+        if (bytes == -1)
+        {
+            if (errno == EAGAIN)
+            {
+                return 0;
+            }
+            else
+            {
+                printf("[ERROR] kon input event niet lezen\n");
+                close(buttonFd);
+                return EXIT_FAILURE;
+            }
+        }
+
+        if (verbose > 0) printf("[INFO] Aantal button event bytes gelezen = %d\n", bytes);
+    }
 }
