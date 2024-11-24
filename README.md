@@ -1,9 +1,14 @@
 # A Fluidsynth running on a Raspberry Pi with a 64x128 OLED display.
 
 ## Prerequisits
-* Add overlay ssd1306-spi to boot/firmware/config.txt  
+* Add overlay ssd1306-spi to /boot/firmware/config.txt  
   `dtoverlay=ssd1306-spi`  
   After doing so, you can use fbtft staging. Simply write to dev/fb0, 16-bit per pixel.
+* Add overlay rotary encoder to /boot/firmware/config.txt  
+  `dtoverlay=rotary-encoder,pin_a=17,pin_b=27,relative_axis=1`
+* Add overlay gpio-key to /boot/firmware/config.txt  
+`dtoverlay=gpio-key,gpio=23,keycode=68,label="BUTTON",gpio_pull=up`  
+keycode 68 is for the F10 keyboard key
 * get essential libs for building fluidsynth
 ```shell
 sudo apt-get update
@@ -59,5 +64,12 @@ No pull ups are required.
 | A           | 17        |
 | GND         | GND       |
 | B           | 27        |
+
+No pull ups are required.
+
+### Button
+| Button pin | RPi4 BCM pin # |
+| ----------- | --------- |
+| NO           | 23        |
 
 No pull ups are required.
