@@ -44,7 +44,7 @@ struct input_event rotaryEncEv;
 struct input_event buttonEv;
 int rotaryEncFd = -1;
 int buttonFd = -1;
-uiState_t uiState = ST_IDLE;
+int uiState = ST_IDLE;
 
 int UI_init()
 {

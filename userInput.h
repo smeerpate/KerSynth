@@ -7,7 +7,7 @@ enum uiStates
     ST_MIDICHSELECT,
     ST_SFSELECT,
     ST_MAX_STATES
-}uiState_t;
+};
 
 int UI_init();
 void UI_Task();
