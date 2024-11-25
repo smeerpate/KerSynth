@@ -11,9 +11,6 @@ enum uiStates
     ST_MAX_STATES
 };
 
-int UI_selectedSoundFont;
-int UI_selectedMidiCh;
-
 int UI_init();
 void UI_Task(fluid_synth_t* synth);
 void UI_writeMessageToOLED(int xOffset, int lineNr, const char *text);
