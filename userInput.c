@@ -79,6 +79,9 @@ void UI_Task(fluid_synth_t* synth)
         case ST_IDLE:
             if (buttonEv.type == EV_KEY)
             {
+				fluid_synth_noteon(synth, 0, 60, 100); // Play middle C
+				usleep(100000); // Wait for 300 milliseconds
+				fluid_synth_noteoff(synth, 0, 60); // Stop middle C
                 if (buttonEv.code == 68 && buttonEv.value)
                 {
                     uiState = ST_MIDICHSELECT;
